@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ .Values.factorio.kubernetes.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Values.factorio.kubernetes.name }}
+  name: {{ .Values.factorio.kubernetes.name }}
+spec:
+  type: NodePort
+  ports:
+  - name: factorio
+    port: {{ .Values.factorio.kubernetes.port }}
+    nodePort: 30000
+    protocol: UDP
+  selector:
+    app: {{ .Values.factorio.kubernetes.name }}

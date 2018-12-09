@@ -1,0 +1,76 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .Values.factorio.kubernetes.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Values.factorio.kubernetes.name }}
+  name: {{ .Values.factorio.kubernetes.name }}
+  namespace: {{ .Values.factorio.kubernetes.namespace }}
+spec:
+  template:
+    metadata:
+      namespace: {{ .Values.factorio.kubernetes.namespace }}
+      labels:
+        app: {{ .Values.factorio.kubernetes.name }}
+        release: {{ .Values.factorio.kubernetes.name }}
+    spec:
+      containers:
+        - command:
+          - /opt/factorio/bin/x64/factorio
+          - -v
+          - --start-server-load-latest
+          - /opt/factorio/saves/default.zip
+          - --port 
+          - "{{ .Values.factorio.kubernetes.port }}"
+          - --console-log
+          - /opt/factorio/log/default.log
+{{ if .Values.factorio.map_gen_settings }}
+          - --map-gen-settings
+          - /opt/factorio/external-config/map-gen-settings.json
+{{ end }}
+{{ if .Values.factorio.map_settings }}
+          - --map-settings
+          - /opt/factorio/external-config/map-settings.json
+{{ end }}
+# {{ if .Values.factorio.mod_list }}
+#           - --mod-list
+#           - /opt/factorio/external-config/mod-list.json
+# {{ end }}
+{{ if .Values.factorio.server_settings }}
+          - --server-settings
+          - /opt/factorio/external-config/server-settings.json
+{{ end }}
+          image: {{ .Values.factorio.kubernetes.image }}:{{ .Values.factorio.kubernetes.image_tag }}
+          imagePullPolicy: Always
+          name: {{ .Values.factorio.kubernetes.name }}
+          ports:
+          - name: factorio
+            containerPort: {{ .Values.factorio.kubernetes.port }}
+            protocol: UDP
+          resources: 
+{{ toYaml .Values.factorio.kubernetes.resources | indent 12 }}
+          volumeMounts:
+          - name: external-config
+            mountPath: /opt/factorio/external-config
+      volumes:
+      - name: external-config
+        configMap:
+          name: {{ .Values.factorio.kubernetes.name }}
+          items:
+{{ if .Values.factorio.map_gen_settings }}
+          - key: map_gen_settings.json
+            path: map-gen-settings.json
+{{ end }}
+{{ if .Values.factorio.map_settings }}
+          - key: map_settings.json
+            path: map-settings.json
+{{ end }}
+# {{ if .Values.factorio.mod_list }}
+#           - key: mod_list.json
+#             path: mod-list.json
+# {{ end }}
+{{ if .Values.factorio.server_settings }}
+          - key: server_settings.json
+            path: server-settings.json
+{{ end }}
