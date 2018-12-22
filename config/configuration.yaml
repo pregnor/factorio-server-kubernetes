@@ -1,0 +1,25 @@
+apiVersion: v1
+factorio:
+  docker:
+    binaryRelativePath: /bin/x64/factorio
+    factorioPath: /opt/factorio
+  kubernetes:
+    image: pregnor/factorio-server-docker
+    imageTag: 0.16.51
+    name: factorio-server
+    namespace: factorio
+    nodePort: 30000
+    port: 34197
+    protocol: UDP
+    serviceType: NodePort
+  paths:
+    configuration: /opt/persist/config
+    log: /opt/persist/log
+    map: /opt/persist/map
+    mapIDs: /opt/persist/map/ids.log
+    persist: /opt/persist
+  rawFiles:
+  - flagName: map-gen-settings
+    source: config/map-gen-settings.json
+  - flagName: server-settings
+    source: config/server-settings.json
