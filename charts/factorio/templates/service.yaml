@@ -4,14 +4,13 @@ metadata:
   labels:
     app: {{ .Values.factorio.kubernetes.name }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
-    release: {{ .Values.factorio.kubernetes.name }}
   name: {{ .Values.factorio.kubernetes.name }}
 spec:
-  type: NodePort
+  type: {{ .Values.factorio.kubernetes.serviceType }}
   ports:
-  - name: factorio
+  - name: {{ .Values.factorio.kubernetes.name }}
     port: {{ .Values.factorio.kubernetes.port }}
-    nodePort: 30000
-    protocol: UDP
+    nodePort: {{ .Values.factorio.kubernetes.nodePort }}
+    protocol: {{ .Values.factorio.kubernetes.protocol }}
   selector:
     app: {{ .Values.factorio.kubernetes.name }}

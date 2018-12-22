@@ -1,40 +1,32 @@
-apiVersion: extensions/v1beta1
-kind: Deployment
+{{ $mapID := uuidv4 }}
+apiVersion: batch/v1
+kind: Job
 metadata:
-  labels:
-    app: {{ .Values.factorio.kubernetes.name }}
-    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
-    release: {{ .Values.factorio.kubernetes.name }}
-  name: {{ .Values.factorio.kubernetes.name }}
   namespace: {{ .Values.factorio.kubernetes.namespace }}
+  name: {{ .Values.factorio.kubernetes.name }}-create
+  labels:
+    app: {{ .Values.factorio.kubernetes.name }}-create
 spec:
   template:
     metadata:
-      name: {{ .Values.factorio.kubernetes.name }}
       namespace: {{ .Values.factorio.kubernetes.namespace }}
       labels:
-        app: {{ .Values.factorio.kubernetes.name }}
-        gameID: {{ .Values.factorio.gameID }}
+        app: {{ .Values.factorio.kubernetes.name }}-create
     spec:
       containers:
         - command:
           - /bin/bash
           - -c
           args:
-          - map_id=$(cat {{ .Values.factorio.paths.mapIDs }} | tail -n 1);
-            echo "Factorio map ID - $map_id";
+          - echo {{ $mapID }} >> {{ .Values.factorio.paths.mapIDs }};
             {{ .Values.factorio.docker.factorioPath }}{{ .Values.factorio.docker.binaryRelativePath }}
-            --verbose
-            --console-log {{ .Values.factorio.paths.log }}/$map_id.log
-            --start-server {{ .Values.factorio.paths.map }}/$map_id.zip
+            --verbose 
+            --console-log {{ .Values.factorio.paths.log }}/{{ $mapID }}_create.log
+            --create {{ .Values.factorio.paths.map }}/{{ $mapID }}.zip
             {{- range .Values.factorio.rawFiles }} --{{ .flagName }} {{ .path }}{{ end }}
           image: {{ .Values.factorio.kubernetes.image }}:{{ .Values.factorio.kubernetes.imageTag }}
           imagePullPolicy: Always
-          name: {{ .Values.factorio.kubernetes.name }}
-          ports:
-          - name: {{ .Values.factorio.kubernetes.name }}
-            containerPort: {{ .Values.factorio.kubernetes.port }}
-            protocol: {{ .Values.factorio.kubernetes.protocol }}
+          name: {{ .Values.factorio.kubernetes.name }}-create
           volumeMounts:
           - name: {{ .Values.factorio.kubernetes.name }}
             mountPath: {{ .Values.factorio.paths.configuration }}
@@ -42,6 +34,7 @@ spec:
             mountPath: {{ .Values.factorio.paths.log }}
           - name: {{ .Values.factorio.kubernetes.name }}-map
             mountPath: {{ .Values.factorio.paths.map }}
+      restartPolicy: OnFailure
       volumes:
       - name: {{ .Values.factorio.kubernetes.name }}
         configMap:

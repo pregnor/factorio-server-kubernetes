@@ -2,22 +2,10 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Values.factorio.kubernetes.name }}
-  namespace: {{ .Values.factorio.kubernetes.name }}
+  namespace: {{ .Values.factorio.kubernetes.namespace }}
 data:
-{{ if .Values.factorio.map_gen_settings }}
-  map_gen_settings.json: |
-{{ .Values.factorio.map_gen_settings | indent 4}}
-{{ end }}
-{{ if .Values.factorio.map_settings }}
-  map_settings.json: |
-{{ .Values.factorio.map_settings | indent 4}}
-{{ end }}
-{{ if .Values.factorio.mod_list }}
-  mod_list.json: |
-{{ .Values.factorio.mod_list | indent 4}}
-{{ end }}
-{{ if .Values.factorio.server_settings }}
-  server_settings.json: |
-{{ .Values.factorio.server_settings | indent 4}}
+{{ range .Values.factorio.rawFiles }}
+{{ .name | indent 2 }}: |-
+{{ .value | indent 4 }}
 {{ end }}
 
