@@ -42,6 +42,15 @@ spec:
             mountPath: {{ .Values.factorio.paths.log }}
           - name: {{ .Values.factorio.kubernetes.name }}-map
             mountPath: {{ .Values.factorio.paths.map }}
+      initContainers:
+        - command:
+          - /bin/bash
+          - -c
+          args:
+          - sleep 10
+          image: {{ .Values.factorio.kubernetes.image }}:{{ .Values.factorio.kubernetes.imageTag }}
+          imagePullPolicy: Always
+          name: {{ .Values.factorio.kubernetes.name }}-wait-for-map
       volumes:
       - name: {{ .Values.factorio.kubernetes.name }}
         configMap:
