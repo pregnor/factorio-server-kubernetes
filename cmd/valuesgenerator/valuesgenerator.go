@@ -22,9 +22,9 @@ type cliArguments struct {
 // checkError checks the specified error.
 // If the error is not nil, it is being logged with the specified level.
 // If the specified level is zapcore.FatalLevel the program aborts on error.
-func checkError(err error, logger *zap.Logger, level zapcore.Level, message string, fields ...zap.Field) {
+func checkError(err error, logger *zap.Logger, level zapcore.Level, message string, fields ...zap.Field) (isError bool) {
 	if err == nil {
-		return
+		return false
 	}
 
 	fields2 := append([]zap.Field{zap.Error(err)}, fields...)
@@ -33,6 +33,8 @@ func checkError(err error, logger *zap.Logger, level zapcore.Level, message stri
 	if level == zapcore.FatalLevel {
 		os.Exit(-1)
 	}
+
+	return true
 }
 
 // loadConfigurationFile loads a configuration file with flags and raw configuration file values.
