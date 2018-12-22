@@ -6,18 +6,23 @@ factorio:
   kubernetes:
     image: pregnor/factorio-server-docker
     imageTag: 0.16.51
-    name: factorio-server
+    names:
+      create: factorio-server-create
+      log: factorio-server-log
+      map: factorio-server-map
+      server: factorio-server
+      wait: factorio-server-wait-for-map
     namespace: factorio
     nodePort: 30000
+    paths:
+      configuration: /opt/persist/config
+      log: /opt/persist/log
+      map: /opt/persist/map
+      mapIDs: /opt/persist/map/ids.log
+      persist: /opt/persist
     port: 34197
     protocol: UDP
     serviceType: NodePort
-  paths:
-    configuration: /opt/persist/config
-    log: /opt/persist/log
-    map: /opt/persist/map
-    mapIDs: /opt/persist/map/ids.log
-    persist: /opt/persist
   rawFiles:
   - flagName: map-gen-settings
     name: map-gen-settings.json

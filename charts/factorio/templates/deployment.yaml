@@ -2,18 +2,18 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   labels:
-    app: {{ .Values.factorio.kubernetes.name }}
+    app: {{ .Values.factorio.kubernetes.names.server }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
-    release: {{ .Values.factorio.kubernetes.name }}
-  name: {{ .Values.factorio.kubernetes.name }}
+    release: {{ .Values.factorio.kubernetes.names.server }}
+  name: {{ .Values.factorio.kubernetes.names.server }}
   namespace: {{ .Values.factorio.kubernetes.namespace }}
 spec:
   template:
     metadata:
-      name: {{ .Values.factorio.kubernetes.name }}
+      name: {{ .Values.factorio.kubernetes.names.server }}
       namespace: {{ .Values.factorio.kubernetes.namespace }}
       labels:
-        app: {{ .Values.factorio.kubernetes.name }}
+        app: {{ .Values.factorio.kubernetes.names.server }}
         gameID: {{ .Values.factorio.gameID }}
     spec:
       containers:
@@ -21,27 +21,27 @@ spec:
           - /bin/bash
           - -c
           args:
-          - map_id=$(cat {{ .Values.factorio.paths.mapIDs }} | tail -n 1);
+          - map_id=$(cat {{ .Values.factorio.kubernetes.paths.mapIDs }} | tail -n 1);
             echo "Factorio map ID - $map_id";
             {{ .Values.factorio.docker.factorioPath }}{{ .Values.factorio.docker.binaryRelativePath }}
             --verbose
-            --console-log {{ .Values.factorio.paths.log }}/$map_id.log
-            --start-server {{ .Values.factorio.paths.map }}/$map_id.zip
+            --console-log {{ .Values.factorio.kubernetes.paths.log }}/$map_id.log
+            --start-server {{ .Values.factorio.kubernetes.paths.map }}/$map_id.zip
             {{- range .Values.factorio.rawFiles }} --{{ .flagName }} {{ .path }}{{ end }}
           image: {{ .Values.factorio.kubernetes.image }}:{{ .Values.factorio.kubernetes.imageTag }}
           imagePullPolicy: Always
-          name: {{ .Values.factorio.kubernetes.name }}
+          name: {{ .Values.factorio.kubernetes.names.server }}
           ports:
-          - name: {{ .Values.factorio.kubernetes.name }}
+          - name: {{ .Values.factorio.kubernetes.names.server }}
             containerPort: {{ .Values.factorio.kubernetes.port }}
             protocol: {{ .Values.factorio.kubernetes.protocol }}
           volumeMounts:
-          - name: {{ .Values.factorio.kubernetes.name }}
-            mountPath: {{ .Values.factorio.paths.configuration }}
-          - name: {{ .Values.factorio.kubernetes.name }}-log
-            mountPath: {{ .Values.factorio.paths.log }}
-          - name: {{ .Values.factorio.kubernetes.name }}-map
-            mountPath: {{ .Values.factorio.paths.map }}
+          - name: {{ .Values.factorio.kubernetes.names.server }}
+            mountPath: {{ .Values.factorio.kubernetes.paths.configuration }}
+          - name: {{ .Values.factorio.kubernetes.names.log }}
+            mountPath: {{ .Values.factorio.kubernetes.paths.log }}
+          - name: {{ .Values.factorio.kubernetes.names.map }}
+            mountPath: {{ .Values.factorio.kubernetes.paths.map }}
       initContainers:
         - command:
           - /bin/bash
@@ -50,21 +50,21 @@ spec:
           - sleep 10
           image: {{ .Values.factorio.kubernetes.image }}:{{ .Values.factorio.kubernetes.imageTag }}
           imagePullPolicy: Always
-          name: {{ .Values.factorio.kubernetes.name }}-wait-for-map
+          name: {{ .Values.factorio.kubernetes.names.wait }}
       volumes:
-      - name: {{ .Values.factorio.kubernetes.name }}
+      - name: {{ .Values.factorio.kubernetes.names.server }}
         configMap:
-          name: {{ .Values.factorio.kubernetes.name }}
+          name: {{ .Values.factorio.kubernetes.names.server }}
           items:
 {{ range .Values.factorio.rawFiles }}
           - key: {{ .name }}
             path: {{ .name }}
 {{ end }}
-      - name: {{ .Values.factorio.kubernetes.name }}-log
+      - name: {{ .Values.factorio.kubernetes.names.log }}
         hostPath:
-          path: {{ .Values.factorio.paths.log }}
+          path: {{ .Values.factorio.kubernetes.paths.log }}
           type: DirectoryOrCreate
-      - name: {{ .Values.factorio.kubernetes.name }}-map
+      - name: {{ .Values.factorio.kubernetes.names.map }}
         hostPath:
-          path: {{ .Values.factorio.paths.map }}
+          path: {{ .Values.factorio.kubernetes.paths.map }}
           type: DirectoryOrCreate

@@ -3,52 +3,52 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   namespace: {{ .Values.factorio.kubernetes.namespace }}
-  name: {{ .Values.factorio.kubernetes.name }}-create
+  name: {{ .Values.factorio.kubernetes.names.create }}
   labels:
-    app: {{ .Values.factorio.kubernetes.name }}-create
+    app: {{ .Values.factorio.kubernetes.names.create }}
 spec:
   template:
     metadata:
       namespace: {{ .Values.factorio.kubernetes.namespace }}
       labels:
-        app: {{ .Values.factorio.kubernetes.name }}-create
+        app: {{ .Values.factorio.kubernetes.names.create }}
     spec:
       containers:
         - command:
           - /bin/bash
           - -c
           args:
-          - echo {{ $mapID }} >> {{ .Values.factorio.paths.mapIDs }};
+          - echo {{ $mapID }} >> {{ .Values.factorio.kubernetes.paths.mapIDs }};
             {{ .Values.factorio.docker.factorioPath }}{{ .Values.factorio.docker.binaryRelativePath }}
             --verbose 
-            --console-log {{ .Values.factorio.paths.log }}/{{ $mapID }}_create.log
-            --create {{ .Values.factorio.paths.map }}/{{ $mapID }}.zip
+            --console-log {{ .Values.factorio.kubernetes.paths.log }}/{{ $mapID }}_create.log
+            --create {{ .Values.factorio.kubernetes.paths.map }}/{{ $mapID }}.zip
             {{- range .Values.factorio.rawFiles }} --{{ .flagName }} {{ .path }}{{ end }}
           image: {{ .Values.factorio.kubernetes.image }}:{{ .Values.factorio.kubernetes.imageTag }}
           imagePullPolicy: Always
-          name: {{ .Values.factorio.kubernetes.name }}-create
+          name: {{ .Values.factorio.kubernetes.names.create }}
           volumeMounts:
-          - name: {{ .Values.factorio.kubernetes.name }}
-            mountPath: {{ .Values.factorio.paths.configuration }}
-          - name: {{ .Values.factorio.kubernetes.name }}-log
-            mountPath: {{ .Values.factorio.paths.log }}
-          - name: {{ .Values.factorio.kubernetes.name }}-map
-            mountPath: {{ .Values.factorio.paths.map }}
+          - name: {{ .Values.factorio.kubernetes.names.server }}
+            mountPath: {{ .Values.factorio.kubernetes.paths.configuration }}
+          - name: {{ .Values.factorio.kubernetes.names.log }}
+            mountPath: {{ .Values.factorio.kubernetes.paths.log }}
+          - name: {{ .Values.factorio.kubernetes.names.map }}
+            mountPath: {{ .Values.factorio.kubernetes.paths.map }}
       restartPolicy: OnFailure
       volumes:
-      - name: {{ .Values.factorio.kubernetes.name }}
+      - name: {{ .Values.factorio.kubernetes.names.server }}
         configMap:
-          name: {{ .Values.factorio.kubernetes.name }}
+          name: {{ .Values.factorio.kubernetes.names.server }}
           items:
 {{ range .Values.factorio.rawFiles }}
           - key: {{ .name }}
             path: {{ .name }}
 {{ end }}
-      - name: {{ .Values.factorio.kubernetes.name }}-log
+      - name: {{ .Values.factorio.kubernetes.names.log }}
         hostPath:
-          path: {{ .Values.factorio.paths.log }}
+          path: {{ .Values.factorio.kubernetes.paths.log }}
           type: DirectoryOrCreate
-      - name: {{ .Values.factorio.kubernetes.name }}-map
+      - name: {{ .Values.factorio.kubernetes.names.map }}
         hostPath:
-          path: {{ .Values.factorio.paths.map }}
+          path: {{ .Values.factorio.kubernetes.paths.map }}
           type: DirectoryOrCreate

@@ -50,7 +50,7 @@ func generateChart(chart interface{}, configuration interface{}) (generatedChart
 // It includes expanding raw files into configMap arguments.
 func generateValues(configuration interface{}) (values interface{}, err error) {
 	values = configuration
-	configurationDirectory := values.(map[interface{}]interface{})["factorio"].(map[interface{}]interface{})["paths"].(map[interface{}]interface{})["configuration"].(string)
+	configurationDirectory := values.(map[interface{}]interface{})["factorio"].(map[interface{}]interface{})["kubernetes"].(map[interface{}]interface{})["paths"].(map[interface{}]interface{})["configuration"].(string)
 
 	for fileIndex, rawFile := range values.(map[interface{}]interface{})["factorio"].(map[interface{}]interface{})["rawFiles"].([]interface{}) {
 		source := rawFile.(map[interface{}]interface{})["source"].(string)

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Values.factorio.kubernetes.name }}
+  name: {{ .Values.factorio.kubernetes.names.server }}
   namespace: {{ .Values.factorio.kubernetes.namespace }}
 data:
 {{ range .Values.factorio.rawFiles }}
