@@ -135,7 +135,7 @@ func parseArguments(rawArguments []string) (arguments *cliArguments, err error) 
 	arguments = &cliArguments{}
 	flags := flag.NewFlagSet("cli_arguments", flag.ContinueOnError)
 
-	flags.StringVar(&arguments.ConfigurationYAMLPath, "configuration-yaml-path", "config/configuration.yaml", "JSON file containing flags and raw configuration file content. Raw file paths are automatically expanded into their values.")
+	flags.StringVar(&arguments.ConfigurationYAMLPath, "configuration-yaml-path", "config/configuration.yaml", "YAML file describing basic Kubernetes configurations for Factorio.")
 	flags.StringVar(&arguments.ValuesYAMLPath, "values-yaml-path", "charts/factorio/values.yaml", "Factorio chart values.yaml path.")
 
 	err = flags.Parse(rawArguments)
