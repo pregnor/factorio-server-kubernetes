@@ -37,30 +37,13 @@ func checkError(err error, logger *zap.Logger, level zapcore.Level, message stri
 	return true
 }
 
-// loadConfigurationFile loads a configuration file with flags and raw configuration file values.
-func loadConfigurationFile(configurationYAMLPath string) (values map[interface{}]interface{}, err error) {
-	if configurationYAMLPath == "" {
-		return values, nil
-	}
+// generateValues takes the basic configuration values and generates expanded values from it.
+// It includes expanding raw files into configMap arguments.
+func generateValues(configuration interface{}) (values interface{}, err error) {
+	values = configuration
+	configurationDirectory := values.(map[interface{}]interface{})["factorio"].(map[interface{}]interface{})["paths"].(map[interface{}]interface{})["configuration"].(string)
 
-	configurationFile, err := os.OpenFile(configurationYAMLPath, os.O_RDONLY, 0777)
-	if err != nil {
-		return values, errors.Wrapf(err, "opening configuration file, configuration file JSON path: '%+v'", configurationYAMLPath)
-	}
-
-	configurationBytes, err := ioutil.ReadAll(configurationFile)
-	if err != nil {
-		return values, errors.Wrapf(err, "reading configuration file, configuration file JSON path: '%+v'", configurationYAMLPath)
-	}
-
-	err = yaml.Unmarshal(configurationBytes, &values)
-	if err != nil {
-		return values, errors.Wrapf(err, "decoding configuration file, raw configurations: '%+v'", string(configurationBytes))
-	}
-
-	configurationDirectory := values["factorio"].(map[interface{}]interface{})["paths"].(map[interface{}]interface{})["configuration"].(string)
-
-	for fileIndex, rawFile := range values["factorio"].(map[interface{}]interface{})["rawFiles"].([]interface{}) {
+	for fileIndex, rawFile := range values.(map[interface{}]interface{})["factorio"].(map[interface{}]interface{})["rawFiles"].([]interface{}) {
 		source := rawFile.(map[interface{}]interface{})["source"].(string)
 		rawFile, err := os.OpenFile(source, os.O_RDONLY, 0777)
 		if err != nil {
@@ -73,9 +56,9 @@ func loadConfigurationFile(configurationYAMLPath string) (values map[interface{}
 		}
 
 		name := path.Base(source)
-		values["factorio"].(map[interface{}]interface{})["rawFiles"].([]interface{})[fileIndex].(map[interface{}]interface{})["name"] = name
-		values["factorio"].(map[interface{}]interface{})["rawFiles"].([]interface{})[fileIndex].(map[interface{}]interface{})["path"] = filepath.Join(configurationDirectory, name)
-		values["factorio"].(map[interface{}]interface{})["rawFiles"].([]interface{})[fileIndex].(map[interface{}]interface{})["value"] = string(rawFileBytes)
+		values.(map[interface{}]interface{})["factorio"].(map[interface{}]interface{})["rawFiles"].([]interface{})[fileIndex].(map[interface{}]interface{})["name"] = name
+		values.(map[interface{}]interface{})["factorio"].(map[interface{}]interface{})["rawFiles"].([]interface{})[fileIndex].(map[interface{}]interface{})["path"] = filepath.Join(configurationDirectory, name)
+		values.(map[interface{}]interface{})["factorio"].(map[interface{}]interface{})["rawFiles"].([]interface{})[fileIndex].(map[interface{}]interface{})["value"] = string(rawFileBytes)
 	}
 
 	return values, nil
@@ -110,14 +93,14 @@ func main() {
 	arguments, err := parseArguments(rawArguments)
 	checkError(err, logger, zapcore.FatalLevel, "parsing CLI arguments")
 
-	values, err := loadConfigurationFile(arguments.ConfigurationYAMLPath)
+	configuration, err := readYAMLFile(arguments.ConfigurationYAMLPath)
+	checkError(err, logger, zapcore.FatalLevel, "reading configuration YAML file")
+
+	values, err := generateValues(configuration)
 	checkError(err, logger, zapcore.FatalLevel, "loading configuration file")
 
-	valuesBytes, err := yaml.Marshal(values)
-	checkError(err, logger, zapcore.FatalLevel, "marshalling values", zap.Any("values", values))
-
-	err = ioutil.WriteFile(arguments.ValuesYAMLPath, valuesBytes, 0777)
-	checkError(err, logger, zapcore.FatalLevel, "writing values file", zap.String("values_yaml_path", arguments.ValuesYAMLPath), zap.Any("values", values))
+	err = writeYAMLFile(values, arguments.ValuesYAMLPath, os.ModePerm)
+	checkError(err, logger, zapcore.FatalLevel, "writing values YAML file")
 }
 
 // newLogger creates a new Zap logger.
@@ -144,4 +127,49 @@ func parseArguments(rawArguments []string) (arguments *cliArguments, err error) 
 	}
 
 	return arguments, nil
+}
+
+// readYAMLFile reads and decodes the specified YAML file.
+func readYAMLFile(yamlPath string) (content interface{}, err error) {
+	if yamlPath == "" {
+		return nil, nil
+	}
+
+	yamlFile, err := os.OpenFile(yamlPath, os.O_RDONLY, 0777)
+	if err != nil {
+		return nil, errors.Wrapf(err, "opening YAML file, YAML path: '%+v'", yamlPath)
+	}
+	defer func() { _ = yamlFile.Close() }()
+
+	contentBytes, err := ioutil.ReadAll(yamlFile)
+	if err != nil {
+		return nil, errors.Wrapf(err, "reading YAML file, YAML path: '%+v'", yamlPath)
+	}
+
+	err = yamlFile.Close()
+	if err != nil {
+		return nil, errors.Wrapf(err, "closing YAML file, YAML path: '%+v'", yamlPath)
+	}
+
+	err = yaml.Unmarshal(contentBytes, &content)
+	if err != nil {
+		return nil, errors.Wrapf(err, "decoding yaml content, content: '%+v'", string(contentBytes))
+	}
+
+	return content, nil
+}
+
+// writeYAMLFile encodes and writes the given content to the specified path as a YAML file.
+func writeYAMLFile(content interface{}, yamlPath string, permissions os.FileMode) (err error) {
+	contentBytes, err := yaml.Marshal(content)
+	if err != nil {
+		return errors.Wrapf(err, "encoding YAML content, yaml_path: '%+v', content: '%+v'", yamlPath, content)
+	}
+
+	err = ioutil.WriteFile(yamlPath, contentBytes, permissions)
+	if err != nil {
+		return errors.Wrapf(err, "writing to file, yaml_path: '%+v', content: '%+v'", yamlPath, string(contentBytes))
+	}
+
+	return nil
 }
