@@ -15,8 +15,8 @@ import (
 
 // cliArguments aggregates the libargen CLI arguments.
 type cliArguments struct {
-	ConfigurationPath string
-	ValuesYAMLPath    string
+	ConfigurationYAMLPath string
+	ValuesYAMLPath        string
 }
 
 // checkError checks the specified error.
@@ -36,19 +36,19 @@ func checkError(err error, logger *zap.Logger, level zapcore.Level, message stri
 }
 
 // loadConfigurationFile loads a configuration file with flags and raw configuration file values.
-func loadConfigurationFile(configurationPath string) (values map[interface{}]interface{}, err error) {
-	if configurationPath == "" {
+func loadConfigurationFile(configurationYAMLPath string) (values map[interface{}]interface{}, err error) {
+	if configurationYAMLPath == "" {
 		return values, nil
 	}
 
-	configurationFile, err := os.OpenFile(configurationPath, os.O_RDONLY, 0777)
+	configurationFile, err := os.OpenFile(configurationYAMLPath, os.O_RDONLY, 0777)
 	if err != nil {
-		return values, errors.Wrapf(err, "opening configuration file, configuration file JSON path: '%+v'", configurationPath)
+		return values, errors.Wrapf(err, "opening configuration file, configuration file JSON path: '%+v'", configurationYAMLPath)
 	}
 
 	configurationBytes, err := ioutil.ReadAll(configurationFile)
 	if err != nil {
-		return values, errors.Wrapf(err, "reading configuration file, configuration file JSON path: '%+v'", configurationPath)
+		return values, errors.Wrapf(err, "reading configuration file, configuration file JSON path: '%+v'", configurationYAMLPath)
 	}
 
 	err = yaml.Unmarshal(configurationBytes, &values)
@@ -108,7 +108,7 @@ func main() {
 	arguments, err := parseArguments(rawArguments)
 	checkError(err, logger, zapcore.FatalLevel, "parsing CLI arguments")
 
-	values, err := loadConfigurationFile(arguments.ConfigurationPath)
+	values, err := loadConfigurationFile(arguments.ConfigurationYAMLPath)
 	checkError(err, logger, zapcore.FatalLevel, "loading configuration file")
 
 	valuesBytes, err := yaml.Marshal(values)
@@ -133,7 +133,7 @@ func parseArguments(rawArguments []string) (arguments *cliArguments, err error) 
 	arguments = &cliArguments{}
 	flags := flag.NewFlagSet("cli_arguments", flag.ContinueOnError)
 
-	flags.StringVar(&arguments.ConfigurationPath, "configuration-path", "config/configuration.yaml", "JSON file containing flags and raw configuration file content. Raw file paths are automatically expanded into their values.")
+	flags.StringVar(&arguments.ConfigurationYAMLPath, "configuration-yaml-path", "config/configuration.yaml", "JSON file containing flags and raw configuration file content. Raw file paths are automatically expanded into their values.")
 	flags.StringVar(&arguments.ValuesYAMLPath, "values-yaml-path", "charts/factorio/values.yaml", "Factorio chart values.yaml path.")
 
 	err = flags.Parse(rawArguments)
