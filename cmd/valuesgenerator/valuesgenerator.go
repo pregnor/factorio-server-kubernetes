@@ -15,6 +15,7 @@ import (
 
 // cliArguments aggregates the libargen CLI arguments.
 type cliArguments struct {
+	ChartYAMLPath         string
 	ConfigurationYAMLPath string
 	ValuesYAMLPath        string
 }
@@ -35,6 +36,14 @@ func checkError(err error, logger *zap.Logger, level zapcore.Level, message stri
 	}
 
 	return true
+}
+
+// generateChart takes the current chart and the basic configuration values and generates the chart values from it.
+func generateChart(chart interface{}, configuration interface{}) (generatedChart interface{}) {
+	generatedChart = chart
+	generatedChart.(map[interface{}]interface{})["appVersion"] = configuration.(map[interface{}]interface{})["factorio"].(map[interface{}]interface{})["kubernetes"].(map[interface{}]interface{})["imageTag"].(string)
+
+	return generatedChart
 }
 
 // generateValues takes the basic configuration values and generates expanded values from it.
@@ -93,8 +102,15 @@ func main() {
 	arguments, err := parseArguments(rawArguments)
 	checkError(err, logger, zapcore.FatalLevel, "parsing CLI arguments")
 
+	chart, err := readYAMLFile(arguments.ChartYAMLPath)
+	checkError(err, logger, zapcore.FatalLevel, "reading chart YAML file")
+
 	configuration, err := readYAMLFile(arguments.ConfigurationYAMLPath)
 	checkError(err, logger, zapcore.FatalLevel, "reading configuration YAML file")
+
+	chart = generateChart(chart, configuration)
+	err = writeYAMLFile(chart, arguments.ChartYAMLPath, os.ModePerm)
+	checkError(err, logger, zapcore.FatalLevel, "writing chart YAML file")
 
 	values, err := generateValues(configuration)
 	checkError(err, logger, zapcore.FatalLevel, "loading configuration file")
@@ -118,8 +134,9 @@ func parseArguments(rawArguments []string) (arguments *cliArguments, err error) 
 	arguments = &cliArguments{}
 	flags := flag.NewFlagSet("cli_arguments", flag.ContinueOnError)
 
+	flags.StringVar(&arguments.ChartYAMLPath, "chart-yaml-path", "charts/factorio/Chart.yaml", "Factorio Chart.yaml chart path.")
 	flags.StringVar(&arguments.ConfigurationYAMLPath, "configuration-yaml-path", "config/configuration.yaml", "YAML file describing basic Kubernetes configurations for Factorio.")
-	flags.StringVar(&arguments.ValuesYAMLPath, "values-yaml-path", "charts/factorio/values.yaml", "Factorio chart values.yaml path.")
+	flags.StringVar(&arguments.ValuesYAMLPath, "values-yaml-path", "charts/factorio/values.yaml", "Factorio values.yaml chart path.")
 
 	err = flags.Parse(rawArguments)
 	if err != nil {
