@@ -21,7 +21,9 @@ spec:
           - /bin/bash
           - -c
           args:
-          - map_id=$(cat {{ .Values.factorio.kubernetes.paths.mapIDs }} | tail -n 1);
+          - map_ids=$(cat {{ .Values.factorio.kubernetes.paths.mapIDs }});
+            echo "Factorio available map IDs - $map_ids";
+            map_id=$(cat {{ .Values.factorio.kubernetes.paths.mapIDs }} | tail -n 1);
             echo "Factorio map ID - $map_id";
             {{ .Values.factorio.docker.factorioPath }}{{ .Values.factorio.docker.binaryRelativePath }}
             --verbose
